@@ -1,0 +1,26 @@
+name: ${rootProject.name}
+main: ${group}
+version: ${version}
+authors:
+  - GSQ_Lin
+  - FullIdle
+depend:
+  - FICore
+  - PlaceholderAPI
+commands:
+  fititle:
+    description: main cmd
+
+permissions:
+  fititle.cmd.confirm:
+    default: op
+  fititle.cmd.set:
+    default: op
+  fititle.cmd.remove:
+    default: op
+  fititle.cmd.reload:
+    default: op
+  fititle.cmd.help:
+    default: true
+  fititle.cmd.open:
+    default: true

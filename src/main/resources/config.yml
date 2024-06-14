@@ -1,0 +1,34 @@
+##
+# 插件提供变量
+# %fititle_now%[玩家现在的称号]
+# %fititle_animation_&aTest_&bTest_&cTest% 可变动变量 这里的意思是第一次显示&aTest第二次显示&b
+##
+
+sql:
+  enable: false
+  url: 'jdbc:mysql://localhost:3306/fititle'
+  user: root
+  password: 123456
+
+msg:
+  help:
+    - 'HELP'
+    - 'reload 重载'
+    - 'help 帮助'
+    - 'set [player] [title] 设置称号'
+    - 'open 打开自己所拥有过的称号'
+    - 'remove [player] [title] 删除玩家指定称号'
+    - 'confirm 确认一些操作'
+
+TitleWarehouse:
+  title: '&a%player_name% of the title warehouse'
+  material: BOOK
+  name: '{title}'
+  lore:
+    - '&r==========='
+    - '&aClick replace title:&r {title}'
+    - '&r==========='
+    - '&3Original text of the title↓'
+    - '&r{original_title}'
+
+defaultTitle: '&3DEFAULT'
