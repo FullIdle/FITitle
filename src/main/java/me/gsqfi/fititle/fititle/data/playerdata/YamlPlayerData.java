@@ -40,12 +40,12 @@ public class YamlPlayerData implements IPlayerData {
     }
 
     @Override
-    public String[] getPlayerTitles(String playerName) {
+    public List<String> getPlayerTitles(String playerName) {
         List<String> list = this.config.getStringList(playerName + ".titles");
         if (!list.contains(CacheData.defaultTitle)) {
             list.add(CacheData.defaultTitle);
         }
-        return list.toArray(new String[0]);
+        return list;
     }
 
     @Override
@@ -75,7 +75,7 @@ public class YamlPlayerData implements IPlayerData {
 
         if (value.equals(CacheData.defaultTitle)) value = null;
         System.out.println(value == null);
-        ArrayList<String> list = Lists.newArrayList(getPlayerTitles(playerName));
+        List<String> list = getPlayerTitles(playerName);
         if (value != null && !list.contains(value)) {
             list.add(value);
         }

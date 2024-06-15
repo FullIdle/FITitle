@@ -1,7 +1,9 @@
 package me.gsqfi.fititle.fititle.data.playerdata;
 
+import java.util.List;
+
 public interface IPlayerData {
-    String[] getPlayerTitles(String playerName);
+    List<String> getPlayerTitles(String playerName);
 
     String getNowPlayerTitle(String playerName);
 

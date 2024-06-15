@@ -29,7 +29,7 @@ public class ConfirmCmd extends ICmd{
             Map.Entry<String, String> entry = RemoveCmd.map.get(sender);
             String name = entry.getKey();
             String title = entry.getValue();
-            ArrayList<String> titles = Lists.newArrayList(CacheData.playerData.getPlayerTitles(name));
+            List<String> titles = CacheData.playerData.getPlayerTitles(name);
             titles.remove(title);
             CacheData.playerData.setPlayerTitles(name,titles.toArray(new String[0]));
             list.add("§a"+name+"remove title:"+title);

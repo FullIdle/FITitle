@@ -12,6 +12,7 @@ import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 public class RemoveConfirm extends ListenerInvHolder {
@@ -53,7 +54,7 @@ public class RemoveConfirm extends ListenerInvHolder {
             }
             int slot = e.getSlot();
             if (slot == 11){
-                ArrayList<String> list = Lists.newArrayList(CacheData.playerData.getPlayerTitles(playerName));
+                List<String> list = CacheData.playerData.getPlayerTitles(playerName);
                 list.remove(this.title);
                 CacheData.playerData.setPlayerTitles(playerName,list.toArray(new String[0]));
                 String nowPlayerTitle = CacheData.playerData.getNowPlayerTitle(playerName);

@@ -32,7 +32,7 @@ public class TitleWarehouse extends ListenerInvHolder {
         this.player = player;
         this.inventory = Bukkit.createInventory(this, 54, "§3Title Warehouse");
         String name = player.getName();
-        this.titles = CacheData.playerData.getPlayerTitles(name);
+        this.titles = CacheData.playerData.getPlayerTitles(name).toArray(new String[0]);
         this.nowTitle = CacheData.playerData.getNowPlayerTitle(name);
         {
             ItemStack itemStack = new ItemStack(Material.STAINED_GLASS_PANE, 1, (short) 1);

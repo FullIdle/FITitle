@@ -30,7 +30,7 @@ public class RemoveCmd extends ICmd{
             }
             String name = player.getName();
             String title = args[1];
-            if (!Lists.newArrayList(CacheData.playerData.getPlayerTitles(name)).contains(title)) {
+            if (!CacheData.playerData.getPlayerTitles(name).contains(title)) {
                 sender.sendMessage("§cPlayer does not have "+title+" title");
                 return false;
             }
@@ -48,7 +48,7 @@ public class RemoveCmd extends ICmd{
             Player player = Bukkit.getPlayer(args[0]);
             if (player != null) {
                 String name = player.getName();
-                return Lists.newArrayList(CacheData.playerData.getPlayerTitles(name));
+                return CacheData.playerData.getPlayerTitles(name);
             }
         }
         return null;
