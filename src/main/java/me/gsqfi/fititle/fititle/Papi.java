@@ -1,6 +1,5 @@
 package me.gsqfi.fititle.fititle;
 
-import com.google.common.collect.Lists;
 import me.clip.placeholderapi.PlaceholderAPI;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import me.gsqfi.fititle.fititle.data.CacheData;
@@ -8,9 +7,9 @@ import org.bukkit.OfflinePlayer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class Papi extends PlaceholderExpansion {
     private final Main plugin;
@@ -18,7 +17,7 @@ public class Papi extends PlaceholderExpansion {
         this.plugin = main;
     }
 
-    public static final Map<OfflinePlayer,Map<String,Integer>> animationCache = new HashMap<>();
+    public static final Map<UUID,Map<String,Integer>> animationCache = new HashMap<>();
 
     @Override
     public @NotNull String getIdentifier() {
@@ -53,14 +52,11 @@ public class Papi extends PlaceholderExpansion {
                     CacheData.playerData.getNowPlayerTitle(player.getName()).replace('&','§'));
         }
         if (arg.equalsIgnoreCase("animation")){
-            Map<String, Integer> map = animationCache.computeIfAbsent(player,k->new HashMap<>());
-            int i = map.computeIfAbsent(params, k -> 0);
-            ArrayList<String> list = Lists.newArrayList(split);
-            list.remove(0);
-            i++;
-            if (i >= list.size()) i = 0;
-            map.put(params,i);
-            return list.get(i).replace('&','§');
+            Map<String, Integer> map = animationCache.computeIfAbsent(player.getUniqueId(), k -> new HashMap<>());
+            int i = map.computeIfAbsent(params, k->0);
+            int value = i + 1 == split.length ? 1 : i+1;
+            map.put(params, value);
+            return split[value];
         }
         return null;
     }
