@@ -6,6 +6,8 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 
+import java.util.List;
+
 @Getter
 public class PlayerTitleChangeEvent extends Event implements Cancellable {
     @Getter
@@ -17,11 +19,11 @@ public class PlayerTitleChangeEvent extends Event implements Cancellable {
     private final String playerName;
     private final String originalTitle;
     @Setter
-    private String[] newTitle;
+    private List<String> newTitle;
     private final Type type;
 
 
-    public PlayerTitleChangeEvent(Type type,String playerName,String originalTitle,String... newTitles){
+    public PlayerTitleChangeEvent(Type type,String playerName,String originalTitle,List<String> newTitles){
         this.type = type;
         this.playerName = playerName;
         this.originalTitle = originalTitle;

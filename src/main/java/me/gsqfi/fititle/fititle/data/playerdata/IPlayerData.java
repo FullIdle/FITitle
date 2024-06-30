@@ -7,7 +7,7 @@ public interface IPlayerData {
 
     String getNowPlayerTitle(String playerName);
 
-    void setPlayerTitles(String playerName, String[] titles);
+    void setPlayerTitles(String playerName, List<String> titles);
 
     void setNowPlayerTitle(String playerName, String title);
 

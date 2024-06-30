@@ -56,7 +56,7 @@ public class RemoveConfirm extends ListenerInvHolder {
             if (slot == 11){
                 List<String> list = CacheData.playerData.getPlayerTitles(playerName);
                 list.remove(this.title);
-                CacheData.playerData.setPlayerTitles(playerName,list.toArray(new String[0]));
+                CacheData.playerData.setPlayerTitles(playerName,list);
                 String nowPlayerTitle = CacheData.playerData.getNowPlayerTitle(playerName);
                 if (nowPlayerTitle.equals(this.title)){
                     CacheData.playerData.setNowPlayerTitle(playerName,null);

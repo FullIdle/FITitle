@@ -1,76 +1,169 @@
 package me.gsqfi.fititle.fititle.data.playerdata;
 
-import lombok.SneakyThrows;
 import me.gsqfi.fititle.fititle.data.CacheData;
-import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.ConfigurationSection;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 public class SqlPlayerData implements IPlayerData {
     public final String url;
     public final String user;
     public final String password;
-    private final YamlPlayerData yamlData;
 
-    @SneakyThrows
     public SqlPlayerData() {
-        FileConfiguration config = CacheData.plugin.getConfig();
-        this.url = config.getString("sql.url");
-        this.user = config.getString("sql.user");
-        this.password = config.getString("sql.password");
-        Connection connection = getConnection();
-        PreparedStatement prepared = connection.prepareStatement("CREATE TABLE IF NOT EXISTS player_data (value TEXT)");
-        PreparedStatement prepared1 = connection.prepareStatement("SELECT value FROM player_data LIMIT 1");
-        prepared.executeUpdate();
-        ResultSet resultSet = prepared1.executeQuery();
-        String data = resultSet.next()?resultSet.getString("value"):"";
-        this.yamlData = new YamlPlayerData(data);
-        prepared1.close();
-        prepared.close();
-        connection.close();
+        ConfigurationSection sql = CacheData.plugin.getConfig().getConfigurationSection("sql");
+        this.url = sql.getString("url");
+        this.user = sql.getString("user");
+        this.password = sql.getString("password");
+        this.verify();
     }
 
-    @SneakyThrows
-    private Connection getConnection(){
+    private Connection getConnection() throws SQLException {
         return DriverManager.getConnection(this.url, this.user, this.password);
+    }
+
+    private void verify() {
+        try (Connection conn = getConnection()) {
+            conn.setAutoCommit(false);
+            String sql = "CREATE TABLE IF NOT EXISTS player_titles ( " +
+                    "player_name VARCHAR(255) NOT NULL, " +
+                    "player_title VARCHAR(255) NOT NULL, " +
+                    "UNIQUE KEY unique_title (player_title), " +
+                    "PRIMARY KEY (player_name, player_title)) ";
+            String sql2 = "CREATE TABLE IF NOT EXISTS player_now_title ( " +
+                    "player_name VARCHAR(255) NOT NULL, " +
+                    "player_title VARCHAR(255) NOT NULL, " +
+                    "UNIQUE KEY unique_name (player_name), " +
+                    "PRIMARY KEY (player_name))";
+            try (
+                    Statement statement = conn.createStatement()
+            ) {
+                statement.executeUpdate(sql);
+                statement.executeUpdate(sql2);
+                conn.commit();
+            } catch (SQLException e) {
+                try {
+                    conn.rollback();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+                e.printStackTrace();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public List<String> getPlayerTitles(String playerName) {
-        return this.yamlData.getPlayerTitles(playerName);
+        List<String> list = new ArrayList<>();
+        String sql = "SELECT player_title FROM player_titles WHERE player_name = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement prepared = conn.prepareStatement(sql)) {
+            prepared.setString(1, playerName);
+            try (ResultSet rs = prepared.executeQuery()) {
+                while (rs.next()) {
+                    list.add(rs.getString("player_title"));
+                }
+            }
+        } catch (SQLException e) {
+            // 更合适的异常处理，比如记录日志
+            e.printStackTrace();
+        }
+        if (!list.contains(CacheData.defaultTitle)) {
+            list.add(CacheData.defaultTitle);
+        }
+        return list;
     }
 
     @Override
     public String getNowPlayerTitle(String playerName) {
-        return this.yamlData.getNowPlayerTitle(playerName);
+        String sql = "SELECT player_title FROM player_titles WHERE player_name = ?";
+        String title = null;
+        try (
+                Connection conn = getConnection();
+                PreparedStatement prepared = conn.prepareStatement(sql)
+        ) {
+            prepared.setString(1, playerName);
+            try (ResultSet rs = prepared.executeQuery()) {
+                if (rs.next()) {
+                    title = rs.getString("player_title");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return title == null ? CacheData.defaultTitle : title;
     }
 
     @Override
-    public void setPlayerTitles(String playerName, String[] titles) {
-        this.yamlData.setPlayerTitles(playerName,titles);
+    public void setPlayerTitles(String playerName, List<String> titles) {
+        String deleteSql = "DELETE FROM player_titles WHERE player_name = ?";
+        String insetSql = "INSERT INTO player_titles (player_name, player_title) VALUES (?, ?)";
+        titles.remove(CacheData.defaultTitle);
+        titles = new ArrayList<>(new HashSet<>(titles));
+        try (Connection conn = getConnection()) {
+            conn.setAutoCommit(false);
+            try (
+                    PreparedStatement delete = conn.prepareStatement(deleteSql);
+                    PreparedStatement inset = conn.prepareStatement(insetSql)
+            ) {
+                delete.setString(1, playerName);
+                delete.executeUpdate();
+                for (String title : titles) {
+                    inset.setString(1, playerName);
+                    inset.setString(2, title);
+                    inset.executeUpdate();
+                }
+            } catch (SQLException e) {
+                try {
+                    conn.rollback();
+                } catch (SQLException ex) {
+                    e.printStackTrace();
+                }
+                e.printStackTrace();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
+
+
 
     @Override
     public void setNowPlayerTitle(String playerName, String title) {
-        this.yamlData.setNowPlayerTitle(playerName,title);
+        if (CacheData.defaultTitle.equals(title)) return;
+
+        String sql = "INSERT INTO player_titles " +
+                "(player_name, player_title) " +
+                "VALUES (?, ?) " +
+                "ON DUPLICATE KEY UPDATE " +
+                "player_name = VALUES(player_name), " +
+                "player_title = VALUES(player_title)";
+
+        try (Connection conn = getConnection()){
+            conn.setAutoCommit(false);
+            try (PreparedStatement prepared = conn.prepareStatement(sql)){
+                prepared.setString(1,playerName);
+                prepared.setString(2,title);
+                prepared.executeUpdate();
+            } catch (SQLException e) {
+                try {
+                    conn.rollback();
+                } catch (SQLException ex) {
+                    e.printStackTrace();
+                }
+                e.printStackTrace();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
-    @SneakyThrows
     @Override
     public void save() {
-        Connection connection = getConnection();
-        String data = this.yamlData.saveToString();
-
-        PreparedStatement prepared = connection.prepareStatement("TRUNCATE TABLE player_data");
-        PreparedStatement prepared1 = connection.prepareStatement("INSERT INTO player_data (value) VALUES (?)");
-        prepared1.setString(1,data);
-
-        prepared.executeUpdate();
-        prepared1.executeUpdate();
-
-        prepared.close();
-        prepared1.close();
-        connection.close();
     }
 }

@@ -11,21 +11,12 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import java.io.File;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class YamlPlayerData implements IPlayerData {
     private final File file;
     private final FileConfiguration config;
-
-    /*
-    *
-    * player_name:
-    *   titles:
-    *     - ''
-    *   now_title: ''
-    *
-    *
-    * */
 
     public YamlPlayerData(String data){
         this.file = null;
@@ -61,7 +52,7 @@ public class YamlPlayerData implements IPlayerData {
     }
 
     @Override
-    public void setPlayerTitles(String playerName, String[] titles) {
+    public void setPlayerTitles(String playerName, List<String> titles) {
         PlayerTitleChangeEvent event = new PlayerTitleChangeEvent(PlayerTitleChangeEvent.Type.ALL,playerName, getNowPlayerTitle(playerName), titles);
         Bukkit.getPluginManager().callEvent(event);
         if (event.isCancelled()) return;
@@ -73,10 +64,10 @@ public class YamlPlayerData implements IPlayerData {
 
     @Override
     public void setNowPlayerTitle(String playerName, String value) {
-        PlayerTitleChangeEvent event = new PlayerTitleChangeEvent(PlayerTitleChangeEvent.Type.NOW,playerName, getNowPlayerTitle(playerName), value);
+        PlayerTitleChangeEvent event = new PlayerTitleChangeEvent(PlayerTitleChangeEvent.Type.NOW,playerName, getNowPlayerTitle(playerName), Collections.singletonList(value));
         Bukkit.getPluginManager().callEvent(event);
         if (event.isCancelled()) return;
-        value = event.getNewTitle()[0];
+        value = event.getNewTitle().isEmpty() ? null : event.getNewTitle().get(0);
 
         if (value.equals(CacheData.defaultTitle)) value = null;
         List<String> list = getPlayerTitles(playerName);
@@ -84,7 +75,7 @@ public class YamlPlayerData implements IPlayerData {
             list.add(value);
         }
 
-        this.setPlayerTitles(playerName,list.toArray(new String[0]));
+        this.setPlayerTitles(playerName,list);
         this.config.set(playerName+".now_title",value);
     }
 
