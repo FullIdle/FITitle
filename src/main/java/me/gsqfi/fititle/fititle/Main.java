@@ -30,6 +30,5 @@ public class Main extends JavaPlugin {
     public void onDisable() {
         IPlayerData playerData = CacheData.playerData;
         playerData.save();
-        playerData.release();
     }
 }

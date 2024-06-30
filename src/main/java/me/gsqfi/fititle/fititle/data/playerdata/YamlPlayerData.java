@@ -9,6 +9,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,6 +26,11 @@ public class YamlPlayerData implements IPlayerData {
     *
     *
     * */
+
+    public YamlPlayerData(String data){
+        this.file = null;
+        this.config = YamlConfiguration.loadConfiguration(new StringReader(data));
+    }
 
     @SneakyThrows
     public YamlPlayerData() {
@@ -63,7 +69,6 @@ public class YamlPlayerData implements IPlayerData {
         ArrayList<String> value = Lists.newArrayList(titles);
         value.remove(CacheData.defaultTitle);
         this.config.set(playerName+".titles", value);
-        this.save();
     }
 
     @Override
@@ -74,7 +79,6 @@ public class YamlPlayerData implements IPlayerData {
         value = event.getNewTitle()[0];
 
         if (value.equals(CacheData.defaultTitle)) value = null;
-        System.out.println(value == null);
         List<String> list = getPlayerTitles(playerName);
         if (value != null && !list.contains(value)) {
             list.add(value);
@@ -82,7 +86,6 @@ public class YamlPlayerData implements IPlayerData {
 
         this.setPlayerTitles(playerName,list.toArray(new String[0]));
         this.config.set(playerName+".now_title",value);
-        this.save();
     }
 
     @SneakyThrows
@@ -91,8 +94,7 @@ public class YamlPlayerData implements IPlayerData {
         this.config.save(this.file);
     }
 
-    @Override
-    public void release() {
-        //
+    public String saveToString() {
+        return this.config.saveToString();
     }
 }

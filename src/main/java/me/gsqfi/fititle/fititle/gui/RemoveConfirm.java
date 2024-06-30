@@ -62,6 +62,7 @@ public class RemoveConfirm extends ListenerInvHolder {
                     CacheData.playerData.setNowPlayerTitle(playerName,null);
                 }
                 e.getWhoClicked().closeInventory();
+                CacheData.playerData.save();
                 return;
             }
             if (slot == 15){

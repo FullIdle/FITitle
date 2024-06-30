@@ -112,6 +112,7 @@ public class TitleWarehouse extends ListenerInvHolder {
                 CacheData.playerData.setNowPlayerTitle(name, title);
                 e.getWhoClicked().closeInventory();
                 e.getWhoClicked().sendMessage("§aYour current title is: " + title);
+                CacheData.playerData.save();
             }
         });
     }

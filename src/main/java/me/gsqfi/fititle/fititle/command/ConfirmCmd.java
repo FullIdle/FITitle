@@ -35,6 +35,7 @@ public class ConfirmCmd extends ICmd{
             list.add("§a"+name+"remove title:"+title);
             RemoveCmd.map.remove(sender);
         }
+        CacheData.playerData.save();
         if (list.isEmpty()) {
             sender.sendMessage("§cNo actions to confirm!");
             return false;

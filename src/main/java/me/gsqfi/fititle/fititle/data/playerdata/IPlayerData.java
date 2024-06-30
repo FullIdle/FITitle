@@ -12,6 +12,4 @@ public interface IPlayerData {
     void setNowPlayerTitle(String playerName, String title);
 
     void save();
-
-    void release();
 }
