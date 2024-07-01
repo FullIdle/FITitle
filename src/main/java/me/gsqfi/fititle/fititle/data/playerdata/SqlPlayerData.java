@@ -118,6 +118,7 @@ public class SqlPlayerData implements IPlayerData {
                     inset.setString(2, title);
                     inset.executeUpdate();
                 }
+                conn.commit();
             } catch (SQLException e) {
                 try {
                     conn.rollback();
@@ -150,6 +151,7 @@ public class SqlPlayerData implements IPlayerData {
                 prepared.setString(1,playerName);
                 prepared.setString(2,title);
                 prepared.executeUpdate();
+                conn.commit();
             } catch (SQLException e) {
                 try {
                     conn.rollback();
