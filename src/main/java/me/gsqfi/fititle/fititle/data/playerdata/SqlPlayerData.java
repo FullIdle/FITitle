@@ -31,13 +31,11 @@ public class SqlPlayerData implements IPlayerData {
             String sql = "CREATE TABLE IF NOT EXISTS player_titles ( " +
                     "player_name VARCHAR(255) NOT NULL, " +
                     "player_title VARCHAR(255) NOT NULL, " +
-                    "UNIQUE KEY unique_title (player_title), " +
-                    "PRIMARY KEY (player_name, player_title)) ";
+                    "UNIQUE (player_name, player_title))";
             String sql2 = "CREATE TABLE IF NOT EXISTS player_now_title ( " +
                     "player_name VARCHAR(255) NOT NULL, " +
                     "player_title VARCHAR(255) NOT NULL, " +
-                    "UNIQUE KEY unique_name (player_name), " +
-                    "PRIMARY KEY (player_name))";
+                    "UNIQUE KEY unique_name (player_name))";
             try (
                     Statement statement = conn.createStatement()
             ) {
@@ -81,7 +79,7 @@ public class SqlPlayerData implements IPlayerData {
 
     @Override
     public String getNowPlayerTitle(String playerName) {
-        String sql = "SELECT player_title FROM player_titles WHERE player_name = ?";
+        String sql = "SELECT player_title FROM player_now_title WHERE player_name = ?";
         String title = null;
         try (
                 Connection conn = getConnection();
@@ -102,9 +100,14 @@ public class SqlPlayerData implements IPlayerData {
     @Override
     public void setPlayerTitles(String playerName, List<String> titles) {
         String deleteSql = "DELETE FROM player_titles WHERE player_name = ?";
-        String insetSql = "INSERT INTO player_titles (player_name, player_title) VALUES (?, ?)";
         titles.remove(CacheData.defaultTitle);
         titles = new ArrayList<>(new HashSet<>(titles));
+        String insetSql = "INSERT INTO player_titles " +
+                "(player_name, player_title) " +
+                "VALUES (?, ?) " +
+                "ON DUPLICATE KEY UPDATE " +
+                "player_name = VALUES(player_name), " +
+                "player_title = VALUES(player_title)";
         try (Connection conn = getConnection()) {
             conn.setAutoCommit(false);
             try (
@@ -136,18 +139,28 @@ public class SqlPlayerData implements IPlayerData {
 
     @Override
     public void setNowPlayerTitle(String playerName, String title) {
-        if (CacheData.defaultTitle.equals(title)) return;
-
-        String sql = "INSERT INTO player_titles " +
+        if (CacheData.defaultTitle.equals(title)){
+            String sql = "DELETE FROM player_now_title WHERE player_name = ?";
+            try (
+                    Connection conn = getConnection();
+                    PreparedStatement prepared = conn.prepareStatement(sql)
+            ){
+                prepared.setString(1,playerName);
+                prepared.executeUpdate();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            return;
+        }
+        String insetSql = "INSERT INTO player_now_title " +
                 "(player_name, player_title) " +
                 "VALUES (?, ?) " +
                 "ON DUPLICATE KEY UPDATE " +
                 "player_name = VALUES(player_name), " +
                 "player_title = VALUES(player_title)";
-
         try (Connection conn = getConnection()){
             conn.setAutoCommit(false);
-            try (PreparedStatement prepared = conn.prepareStatement(sql)){
+            try (PreparedStatement prepared = conn.prepareStatement(insetSql)){
                 prepared.setString(1,playerName);
                 prepared.setString(2,title);
                 prepared.executeUpdate();
@@ -163,6 +176,10 @@ public class SqlPlayerData implements IPlayerData {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+
+        List<String> titles = getPlayerTitles(playerName);
+        titles.add(title);
+        setPlayerTitles(playerName,titles);
     }
 
     @Override
