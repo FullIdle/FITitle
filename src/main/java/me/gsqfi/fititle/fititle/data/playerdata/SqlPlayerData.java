@@ -1,28 +1,30 @@
 package me.gsqfi.fititle.fititle.data.playerdata;
 
+import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
 import me.gsqfi.fititle.fititle.data.CacheData;
 import org.bukkit.configuration.ConfigurationSection;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
 public class SqlPlayerData implements IPlayerData {
-    public final String url;
-    public final String user;
-    public final String password;
+    public final MysqlDataSource source = new MysqlDataSource();
+    public final Map<String,String> player_now_title = new HashMap<>();
+    public final Map<String,List<String>> player_titles = new HashMap<>();
 
     public SqlPlayerData() {
         ConfigurationSection sql = CacheData.plugin.getConfig().getConfigurationSection("sql");
-        this.url = sql.getString("url");
-        this.user = sql.getString("user");
-        this.password = sql.getString("password");
+        source.setURL(sql.getString("url"));
+        source.setUser(sql.getString("user"));
+        source.setPassword(sql.getString("password"));
+        source.setUseUnicode(true);
+        source.setCharacterEncoding("utf-8");
+        source.setAutoReconnect(true);
         this.verify();
     }
 
     private Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(this.url, this.user, this.password);
+        return this.source.getConnection();
     }
 
     private void verify() {
@@ -58,47 +60,59 @@ public class SqlPlayerData implements IPlayerData {
     @Override
     public List<String> getPlayerTitles(String playerName) {
         List<String> list = new ArrayList<>();
-        String sql = "SELECT player_title FROM player_titles WHERE player_name = ?";
-        try (Connection conn = getConnection();
-             PreparedStatement prepared = conn.prepareStatement(sql)) {
-            prepared.setString(1, playerName);
-            try (ResultSet rs = prepared.executeQuery()) {
-                while (rs.next()) {
-                    list.add(rs.getString("player_title"));
+        if (!this.player_titles.containsKey(playerName)){
+            String sql = "SELECT player_title FROM player_titles WHERE player_name = ?";
+            try (Connection conn = getConnection();
+                 PreparedStatement prepared = conn.prepareStatement(sql)) {
+                prepared.setString(1, playerName);
+                try (ResultSet rs = prepared.executeQuery()) {
+                    while (rs.next()) {
+                        list.add(rs.getString("player_title"));
+                    }
                 }
+            } catch (SQLException e) {
+                // 更合适的异常处理，比如记录日志
+                e.printStackTrace();
             }
-        } catch (SQLException e) {
-            // 更合适的异常处理，比如记录日志
-            e.printStackTrace();
-        }
-        if (!list.contains(CacheData.defaultTitle)) {
-            list.add(CacheData.defaultTitle);
+            if (!list.contains(CacheData.defaultTitle)) {
+                list.add(CacheData.defaultTitle);
+            }
+            this.player_titles.put(playerName,list);
+        }else{
+            list = this.player_titles.get(playerName);
         }
         return list;
     }
 
     @Override
     public String getNowPlayerTitle(String playerName) {
-        String sql = "SELECT player_title FROM player_now_title WHERE player_name = ?";
         String title = null;
-        try (
-                Connection conn = getConnection();
-                PreparedStatement prepared = conn.prepareStatement(sql)
-        ) {
-            prepared.setString(1, playerName);
-            try (ResultSet rs = prepared.executeQuery()) {
-                if (rs.next()) {
-                    title = rs.getString("player_title");
+        if (!this.player_now_title.containsKey(playerName)) {
+            String sql = "SELECT player_title FROM player_now_title WHERE player_name = ?";
+            try (
+                    Connection conn = getConnection();
+                    PreparedStatement prepared = conn.prepareStatement(sql)
+            ) {
+                prepared.setString(1, playerName);
+                try (ResultSet rs = prepared.executeQuery()) {
+                    if (rs.next()) {
+                        title = rs.getString("player_title");
+                    }
                 }
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
+            title = title == null ? CacheData.defaultTitle : title;
+            this.player_now_title.put(playerName,title);
+        }else{
+            title = this.player_now_title.get(playerName);
         }
-        return title == null ? CacheData.defaultTitle : title;
+        return title;
     }
 
     @Override
     public void setPlayerTitles(String playerName, List<String> titles) {
+        this.player_titles.remove(playerName);
         String deleteSql = "DELETE FROM player_titles WHERE player_name = ?";
         titles.remove(CacheData.defaultTitle);
         titles = new ArrayList<>(new HashSet<>(titles));
@@ -139,7 +153,8 @@ public class SqlPlayerData implements IPlayerData {
 
     @Override
     public void setNowPlayerTitle(String playerName, String title) {
-        if (CacheData.defaultTitle.equals(title)){
+        this.player_now_title.remove(playerName);
+        if (CacheData.defaultTitle.equals(title)||title == null){
             String sql = "DELETE FROM player_now_title WHERE player_name = ?";
             try (
                     Connection conn = getConnection();
@@ -150,35 +165,37 @@ public class SqlPlayerData implements IPlayerData {
             } catch (SQLException e) {
                 e.printStackTrace();
             }
-            return;
-        }
-        String insetSql = "INSERT INTO player_now_title " +
-                "(player_name, player_title) " +
-                "VALUES (?, ?) " +
-                "ON DUPLICATE KEY UPDATE " +
-                "player_name = VALUES(player_name), " +
-                "player_title = VALUES(player_title)";
-        try (Connection conn = getConnection()){
-            conn.setAutoCommit(false);
-            try (PreparedStatement prepared = conn.prepareStatement(insetSql)){
-                prepared.setString(1,playerName);
-                prepared.setString(2,title);
-                prepared.executeUpdate();
-                conn.commit();
-            } catch (SQLException e) {
-                try {
-                    conn.rollback();
-                } catch (SQLException ex) {
+        }else{
+            String insetSql = "INSERT INTO player_now_title " +
+                    "(player_name, player_title) " +
+                    "VALUES (?, ?) " +
+                    "ON DUPLICATE KEY UPDATE " +
+                    "player_name = VALUES(player_name), " +
+                    "player_title = VALUES(player_title)";
+            try (Connection conn = getConnection()){
+                conn.setAutoCommit(false);
+                try (PreparedStatement prepared = conn.prepareStatement(insetSql)){
+                    prepared.setString(1,playerName);
+                    prepared.setString(2,title);
+                    prepared.executeUpdate();
+                    conn.commit();
+                } catch (SQLException e) {
+                    try {
+                        conn.rollback();
+                    } catch (SQLException ex) {
+                        e.printStackTrace();
+                    }
                     e.printStackTrace();
                 }
+            } catch (SQLException e) {
                 e.printStackTrace();
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
 
         List<String> titles = getPlayerTitles(playerName);
-        titles.add(title);
+        if (title != null){
+            titles.add(title);
+        }
         setPlayerTitles(playerName,titles);
     }
 

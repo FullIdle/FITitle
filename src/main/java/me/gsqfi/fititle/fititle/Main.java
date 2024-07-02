@@ -1,8 +1,10 @@
 package me.gsqfi.fititle.fititle;
 
+import me.clip.placeholderapi.PlaceholderAPI;
 import me.gsqfi.fititle.fititle.command.MainCmd;
 import me.gsqfi.fititle.fititle.data.CacheData;
 import me.gsqfi.fititle.fititle.data.playerdata.IPlayerData;
+import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -16,6 +18,10 @@ public class Main extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        Bukkit.getScheduler().runTaskTimer(this,()->{
+            System.out.println(PlaceholderAPI.setPlaceholders(Bukkit.getOfflinePlayer("GSQ_Lin"), "%fititle_now%"));
+        },0,5);
+
         CacheData.plugin = this;
         this.reloadConfig();
         new Papi(this).register();
