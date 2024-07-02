@@ -18,10 +18,6 @@ public class Main extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        Bukkit.getScheduler().runTaskTimer(this,()->{
-            System.out.println(PlaceholderAPI.setPlaceholders(Bukkit.getOfflinePlayer("GSQ_Lin"), "%fititle_now%"));
-        },0,5);
-
         CacheData.plugin = this;
         this.reloadConfig();
         new Papi(this).register();
