@@ -1,30 +1,35 @@
 package me.gsqfi.fititle.fititle.data.playerdata;
 
-import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
+import com.mysql.jdbc.jdbc2.optional.MysqlConnectionPoolDataSource;
+import lombok.SneakyThrows;
 import me.gsqfi.fititle.fititle.data.CacheData;
 import org.bukkit.configuration.ConfigurationSection;
 
+import javax.sql.PooledConnection;
 import java.sql.*;
 import java.util.*;
 
 public class SqlPlayerData implements IPlayerData {
-    public final MysqlDataSource source = new MysqlDataSource();
+    public final MysqlConnectionPoolDataSource pool = new MysqlConnectionPoolDataSource();
+    public PooledConnection pooledConnection;
     public final Map<String,String> player_now_title = new HashMap<>();
     public final Map<String,List<String>> player_titles = new HashMap<>();
 
+    @SneakyThrows
     public SqlPlayerData() {
         ConfigurationSection sql = CacheData.plugin.getConfig().getConfigurationSection("sql");
-        source.setURL(sql.getString("url"));
-        source.setUser(sql.getString("user"));
-        source.setPassword(sql.getString("password"));
-        source.setUseUnicode(true);
-        source.setCharacterEncoding("utf-8");
-        source.setAutoReconnect(true);
+        pool.setURL(sql.getString("url"));
+        pool.setUser(sql.getString("user"));
+        pool.setPassword(sql.getString("password"));
+        pool.setUseUnicode(true);
+        pool.setCharacterEncoding("utf-8");
+        pool.setAutoReconnect(true);
+        pooledConnection = pool.getPooledConnection();
         this.verify();
     }
 
     private Connection getConnection() throws SQLException {
-        return this.source.getConnection();
+        return this.pooledConnection.getConnection();
     }
 
     private void verify() {
@@ -201,5 +206,11 @@ public class SqlPlayerData implements IPlayerData {
 
     @Override
     public void save() {
+    }
+
+    @SneakyThrows
+    @Override
+    public void release() {
+        this.pooledConnection.close();
     }
 }

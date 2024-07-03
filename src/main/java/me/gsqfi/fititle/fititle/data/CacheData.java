@@ -26,6 +26,7 @@ public class CacheData {
         clear();
 
         FileConfiguration config = plugin.getConfig();
+        if (CacheData.playerData != null) CacheData.playerData.release();
         CacheData.playerData = config.getBoolean("sql.enable") ? new SqlPlayerData() : new YamlPlayerData();
         help = config.getStringList("msg.help").stream().map(s->s.replace('&','§')).toArray(String[]::new);
 

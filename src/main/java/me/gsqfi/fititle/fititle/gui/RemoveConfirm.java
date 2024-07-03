@@ -1,6 +1,5 @@
 package me.gsqfi.fititle.fititle.gui;
 
-import com.google.common.collect.Lists;
 import lombok.Getter;
 import me.fullidle.ficore.ficore.common.api.ineventory.ListenerInvHolder;
 import me.gsqfi.fititle.fititle.data.CacheData;
@@ -11,7 +10,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Getter

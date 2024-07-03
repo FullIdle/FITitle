@@ -85,6 +85,10 @@ public class YamlPlayerData implements IPlayerData {
         this.config.save(this.file);
     }
 
+    @Override
+    public void release() {
+    }
+
     public String saveToString() {
         return this.config.saveToString();
     }
